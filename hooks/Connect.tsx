@@ -15,32 +15,32 @@ interface IConnect {
   updateBalances: () => Promise<void>;
 }
 
-const fetchTokenBalance = async (
-  tokenAddress: string,
-  decimals: number
-): Promise<string> => {
-  const { signer } = store.getState().provider;
-  const transferTokenContract = OwnerContractInstance(signer);
-  let tokenBalance = await transferTokenContract.getBalanceOf(tokenAddress);
-  return (tokenBalance / Math.pow(10, decimals)).toString();
-};
-
-const updateBalances = async (): Promise<void> => {
-  const usdcBalance = await fetchTokenBalance(
-    tokens.usdc.address,
-    tokens.usdc.decimals
-  );
-  const daiBalance = await fetchTokenBalance(
-    tokens.dai.address,
-    tokens.dai.decimals
-  );
-  store.dispatch(walletActions.setTokensBalance({ daiBalance, usdcBalance }));
-};
-
 const Connect = (): IConnect => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const dispatch = useDispatch();
   const { enqueueSnackbar } = useSnackbar();
+
+  const fetchTokenBalance = async (
+    tokenAddress: string,
+    decimals: number
+  ): Promise<string> => {
+    const { signer } = store.getState().provider;
+    const transferTokenContract = OwnerContractInstance(signer);
+    let tokenBalance = await transferTokenContract.getBalanceOf(tokenAddress);
+    return (tokenBalance / Math.pow(10, decimals)).toString();
+  };
+
+  const updateBalances = useCallback(async (): Promise<void> => {
+    const usdcBalance = await fetchTokenBalance(
+      tokens.usdc.address,
+      tokens.usdc.decimals
+    );
+    const daiBalance = await fetchTokenBalance(
+      tokens.dai.address,
+      tokens.dai.decimals
+    );
+    store.dispatch(walletActions.setTokensBalance({ daiBalance, usdcBalance }));
+  }, []);
 
   const onLoad = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -48,6 +48,7 @@ const Connect = (): IConnect => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
 
       if ((await provider.getNetwork()).chainId !== +DEV_NETWORK_CHAINID) {
+        // Wrong network
         if (!window.ethereum) {
           setIsLoading(false);
           enqueueSnackbar(
@@ -61,13 +62,16 @@ const Connect = (): IConnect => {
             method: "wallet_switchEthereumChain",
             params: [{ chainId: DEV_NETWORK_CHAINID }],
           });
-          setIsLoading(false);
           onLoad();
+          setIsLoading(false);
         } catch (switchError: any) {
-          enqueueSnackbar(
-            "An error ocurred connecting to your wallet. Please check you have MetaMask installed.",
-            { variant: "error" }
-          );
+          if (switchError.code !== -32002) {
+            enqueueSnackbar(
+              "An error ocurred connecting to your wallet. Please check you have MetaMask installed.",
+              { variant: "error" }
+            );
+          }
+          return;
         }
       } else {
         await provider.send("eth_requestAccounts", []);
@@ -76,7 +80,7 @@ const Connect = (): IConnect => {
         const walletAddress = await signer.getAddress();
         dispatch(walletActions.setWalletAddress(walletAddress));
 
-        updateBalances();
+        await updateBalances();
       }
     } catch (err) {
       setIsLoading(false);
@@ -87,16 +91,13 @@ const Connect = (): IConnect => {
     }
 
     setIsLoading(false);
-  }, [dispatch, enqueueSnackbar]);
+  }, [dispatch, enqueueSnackbar, updateBalances]);
 
   useEffect(() => {
     onLoad();
   }, [onLoad]);
 
-  return {
-    isLoading,
-    updateBalances,
-  };
+  return { isLoading, updateBalances };
 };
 
 export default Connect;
