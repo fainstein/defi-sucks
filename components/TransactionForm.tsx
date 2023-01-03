@@ -98,14 +98,14 @@ const TransactionForm = () => {
   const approveHandler = async (): Promise<void> => {
     const ownerContract = OwnerContractInstance(signer);
     const tokenContract = new ethers.Contract(
-      tokens.usdc.address,
+      tokenSelection.address,
       ERC20ABI,
       signer
     );
 
     try {
       setApproveLoading(true);
-      const operatorAddress = ownerContract.operator();
+      const operatorAddress = await ownerContract.operator();
       let txResponse = await tokenContract.approve(
         operatorAddress,
         ethers.utils.parseUnits(amount, tokenSelection.decimals),
@@ -146,7 +146,7 @@ const TransactionForm = () => {
         tokenSelection.address,
         walletAddress,
         targetWallet,
-        +amount * Math.pow(10, tokenSelection.decimals),
+        ethers.utils.parseUnits(amount, tokenSelection.decimals),
         {
           gasLimit: 1000000,
         }
