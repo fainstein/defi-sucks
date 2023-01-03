@@ -2,9 +2,10 @@ import { ethers } from "ethers";
 import { OWNER_CONTRACT_ADDRESS } from "../constants/ethereum";
 
 const ABI = [
+  "constructor()",
   "function transferFrom(address tokenAddress, address sender, address recipient, uint256 amount) external",
   "function approve(address tokenAddress, uint256 amount) external",
-  "function getAllowance(address tokenAddress) external view returns(uint) external returns (uint)",
+  "function getAllowance(address tokenAddress) external view external returns (uint)",
   "function getBalanceOf(address tokenAddress) external view returns (uint)",
 ];
 
