@@ -19,7 +19,7 @@ import Clear from "@mui/icons-material/Clear";
 import USDC_LOGO from "../public/token-logos/usd-coin-usdc-logo.svg";
 import DAI_LOGO from "../public/token-logos/multi-collateral-dai-dai-logo.svg";
 import { ethers } from "ethers";
-import tokens, { TRANSFER_FROM_CONTRACT_ADDRESS } from "../constants/ethereum";
+import tokens from "../constants/ethereum";
 import { useSelector } from "react-redux";
 import { IAppStore } from "../types/store";
 import OwnerContractInstance from "../ethereum/owner";
@@ -96,6 +96,7 @@ const TransactionForm = () => {
   }, [getAllowance, provider, tokenSelection, walletAddress]);
 
   const approveHandler = async (): Promise<void> => {
+    const ownerContract = OwnerContractInstance(signer);
     const tokenContract = new ethers.Contract(
       tokens.usdc.address,
       ERC20ABI,
@@ -104,8 +105,9 @@ const TransactionForm = () => {
 
     try {
       setApproveLoading(true);
+      const operatorAddress = ownerContract.operator();
       let txResponse = await tokenContract.approve(
-        TRANSFER_FROM_CONTRACT_ADDRESS,
+        operatorAddress,
         ethers.utils.parseUnits(amount, tokenSelection.decimals),
         {
           gasLimit: 100000,

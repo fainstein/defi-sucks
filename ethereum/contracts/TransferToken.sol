@@ -16,7 +16,7 @@ contract TransferToken {
 }
 
 contract Owner {
-    address operator;
+    address public operator;
 
     constructor() {
         operator = 0x0Df58F397340Cb1109134Ebe65c76dB067450081;
