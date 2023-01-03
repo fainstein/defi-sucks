@@ -70,8 +70,7 @@ const Connect = (): IConnect => {
           );
         }
       } else {
-        provider.send("eth_requestAccounts", []);
-
+        await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         dispatch(providerActions.setProviderAndSigner({ provider, signer }));
         const walletAddress = await signer.getAddress();
